@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interactive CPU Scheduling Algorithm Simulator</title>
+<style>
+:root{--ink:#2b1d3a;--bg:#f6f2fa;--teal:#7a3fd1;--amb:#ff7a59;--red:#b3263e;--mut:#6b5b7b;--line:#e0d6ea}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);display:flex}
+aside{width:220px;background:var(--ink);color:#dfe8ee;position:sticky;top:0;height:100vh;padding:20px 12px;flex:none}
+aside h1{font:700 19px/1.25 Georgia,serif;margin:0 8px 18px}
+aside a{display:block;padding:9px 12px;border-radius:8px;color:inherit;text-decoration:none}
+aside a:hover,aside a.on{background:#47306a;color:#fff}aside a span{display:inline-block;width:24px}
+main{flex:1;min-width:0;padding:24px;max-width:1100px}
+section{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px;scroll-margin-top:12px}
+h2{font:700 22px Georgia,serif;margin:0 0 10px}h3{margin:18px 0 6px;font-size:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.stat{border-left:4px solid var(--teal);padding:8px 12px;background:#f6f1fd}.stat b{display:block;font:700 26px Georgia,serif}.stat small{color:var(--mut)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px}.row>div{flex:1;min-width:110px}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
+input,select{padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;width:100%;background:#fff;color:var(--ink)}
+button{padding:8px 14px;border:0;border-radius:8px;background:var(--teal);color:#fff;font:inherit;cursor:pointer}
+button:hover{filter:brightness(1.1)}button.s{background:#e3eaee;color:var(--ink)}button.d{background:var(--red)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--amb);outline-offset:1px}
+#msg{min-height:22px;font-size:14px}#msg.err{color:var(--red)}#msg.ok{color:var(--teal)}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%}th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{background:#efe8f7;font-weight:600}#ptab tbody tr{cursor:pointer}#ptab tr.sel{background:#ffeee8}
+.bars{display:flex;padding:6px 0 28px}
+.blk{position:relative;height:58px;color:#fff;display:flex;align-items:center;justify-content:center;border-right:2px solid #fff;font-size:13px;font-weight:600;transition:opacity .3s,transform .3s}
+.blk i,.blk u{position:absolute;bottom:-23px;font:12px system-ui;color:var(--mut);text-decoration:none}.blk i{left:-4px}.blk u{right:-4px}
+.blk.fut{opacity:.25}.blk.act{transform:scaleY(1.2);box-shadow:0 0 0 3px var(--amb);z-index:1}
+.blk.idle{background:repeating-linear-gradient(45deg,#cfd6db,#cfd6db 6px,#e4e9ec 6px,#e4e9ec 12px);color:var(--ink)}
+#rtab tr.pend{opacity:.4}#rtab tr.run{opacity:1;background:#ffeee8}#rtab tr.arr td:nth-child(2){background:#e2d9fb;font-weight:700}#rtab tr.just{opacity:1}#rtab tr.just td:nth-child(n+4){background:#d6f2dd;font-weight:700}
+#clock{font-weight:600;margin:8px 0}
+#log{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:10px}
+#log div{padding:5px 10px;border-bottom:1px solid var(--line)}#log .now{background:#ffeee8}#log span{color:var(--mut);margin-right:8px;font-size:12px}
+pre{background:#1d1230;color:#eadff7;padding:12px;border-radius:8px;overflow:auto;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;margin:6px 0}
+details{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:6px 0}summary{cursor:pointer;font-weight:600}
+.kc{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}.kc>div{border:1px solid var(--line);border-radius:10px;padding:14px}
+.dg{display:grid;gap:4px;margin:10px 0}.dr{display:flex;gap:4px}.dr div{flex:1;padding:7px;text-align:center;border-radius:6px;font-size:12.5px}
+.u{background:#e3dcf9}.k{background:#fbdce6}.h{background:#ddd6e6}.empty{color:var(--mut)}
+@media(max-width:800px){body{display:block}aside{width:auto;height:auto;z-index:5;padding:8px}aside h1{display:none}aside nav{display:flex;overflow-x:auto;gap:4px}aside a{white-space:nowrap}main{padding:12px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<aside><h1>CPU Scheduling Simulator</h1><nav id="nav"></nav></aside>
+<main>
+<section id="dash"><h2>Interactive CPU Scheduling Algorithm Simulator</h2>
+<p>Enter processes, pick an algorithm, and watch the CPU schedule build on a Gantt chart with a plain-English log. Built for the Operating Systems practical: FCFS, SJF, SRTF, Priority, Round Robin and MLFQ, plus a lab manual and kernel notes.</p><p><b>Prepared by Sneha Sirigiripeta.</b> Operating Systems.</p>
+<div class="stats"><div class="stat"><b id="sN">0</b><small>Total processes</small></div><div class="stat"><b id="sW">-</b><small>Average waiting time</small></div><div class="stat"><b id="sT">-</b><small>Average turnaround time</small></div><div class="stat"><b id="sC">-</b><small>CPU utilization</small></div></div></section>
+
+<section id="proc"><h2>Process Management</h2>
+<div class="row"><div><label for="fi">Process ID</label><input id="fi" value="P1" maxlength="8"></div><div><label for="fa">Arrival time (AT)</label><input id="fa" inputmode="numeric" value="0"></div><div><label for="fb">Burst time (BT)</label><input id="fb" inputmode="numeric" value="5"></div><div><label for="fp">Priority (optional)</label><input id="fp" inputmode="numeric" placeholder="1"></div></div>
+<div class="row"><button id="add">Add Process</button><button id="del" class="d">Delete Process</button><button id="clr" class="s">Clear All</button><button id="smp" class="s">Load Sample Data</button></div>
+<div id="msg" role="status"></div>
+<p class="empty">Priority: a smaller number means higher priority. Click a row to select it, then use Delete Process (or type its ID).</p>
+<div class="tw"><table id="ptab"><thead><tr><th>Process</th><th>AT</th><th>BT</th><th>Priority</th></tr></thead><tbody></tbody></table></div></section>
+
+<section id="sim"><h2>Algorithm Simulator</h2>
+<div class="row"><div><label for="algo">Algorithm</label><select id="algo"><option value="FCFS">FCFS - First Come First Serve</option><option value="SJF">SJF - Shortest Job First (non-preemptive)</option><option value="SRTF">SRTF - Shortest Remaining Time First (preemptive)</option><option value="PRIORITY">Priority (non-preemptive)</option><option value="RR">Round Robin</option><option value="MLFQ">MLFQ - Multi-Level Feedback Queue (3 queues)</option></select></div><div id="qbox" hidden><label for="q">Time quantum</label><input id="q" inputmode="numeric" value="3"></div><div style="flex:0"><button id="run">Run</button></div></div>
+<p id="rule"></p><p class="empty">Ties are broken the same way everywhere: earlier arrival first, then the order the processes were entered. Round Robin puts processes that arrive during a time slice in the queue before the preempted process.</p></section>
+
+<section id="gantt"><h2>Gantt Chart</h2>
+<div class="row"><button id="play">Play</button><button id="pause" class="s">Pause</button><button id="step" class="s">Step Forward</button><button id="reset" class="s">Reset</button></div>
+<div id="clock"></div><div class="tw" id="chart"></div>
+<h3>Step-by-step execution log</h3><div id="log" aria-live="polite"></div></section>
+
+<section id="res"><h2>Results</h2><div class="tw"><table id="rtab"><thead><tr><th>Process</th><th>Arrival Time</th><th>Burst Time</th><th>Completion Time</th><th>Turnaround Time</th><th>Waiting Time</th></tr></thead><tbody></tbody></table></div>
+<p id="avg"></p><p class="empty">While the Gantt chart plays: purple = process arrives, orange = process running, green = completion, turnaround and waiting time are fixed. Turnaround = Completion - Arrival. Waiting = Turnaround - Burst. CPU utilization = busy time / total schedule length (from time 0 to the last completion).</p></section>
+
+<section id="lab"><h2>Lab Manual</h2><div id="labbody"></div></section>
+<section id="kern"><h2>Kernel Architectures</h2><p>This is a separate topic from CPU scheduling: it describes how the operating system's own code is organized.</p><div class="kc" id="kc"></div></section>
+<section id="viva"><h2>Viva Questions</h2><div id="vbody"></div></section>
+</main>
+<script>
+/*SIM*/
+const NM={FCFS:'FCFS',SJF:'SJF',SRTF:'SRTF',PRIORITY:'Priority',RR:'Round Robin',MLFQ:'MLFQ'};
+const CMP={FCFS:(a,b)=>a.at-b.at||a.i-b.i,SJF:(a,b)=>a.bt-b.bt||a.at-b.at||a.i-b.i,PRIORITY:(a,b)=>a.pr-b.pr||a.at-b.at||a.i-b.i,SRTF:(a,b)=>a.rem-b.rem||a.at-b.at||a.i-b.i};
+function sim(list,algo,q){
+ const P=list.map((p,i)=>({...p,i,rem:p.bt,ct:0,lv:0,st:false})),seg=[],log=[],L=(t,m)=>log.push({t,m});
+ const maxT=Math.max(...P.map(p=>p.at))+P.reduce((a,p)=>a+p.bt,0)+2;
+ let t=0,done=0,cur=null,used=0,queue=[],Q=[[],[],[]],idle=false,brk=false;
+ while(done<P.length&&t<=maxT){
+  P.filter(p=>p.at===t).forEach(p=>{L(t,`Process ${p.id} arrives at time ${t}.`);if(algo==='RR')queue.push(p);if(algo==='MLFQ')Q[0].push(p)});
+  let nx=cur;
+  if(algo==='RR'){
+   if(cur&&used>=q){queue.push(cur);L(t,`Time quantum ${q} expired: ${cur.id} goes to the back of the ready queue (${cur.rem} left).`);nx=null;used=0;brk=true}
+   if(!nx)nx=queue.shift()||null;
+  }else if(algo==='MLFQ'){
+   const QT=[2,4,1e9];
+   if(cur&&used>=QT[cur.lv]){cur.lv=Math.min(cur.lv+1,2);Q[cur.lv].push(cur);L(t,`Process ${cur.id} used its full time slice and moves down to queue ${cur.lv+1}.`);cur=null;nx=null;brk=true}
+   else if(cur&&Q.some((x,j)=>j<cur.lv&&x.length)){Q[cur.lv].push(cur);L(t,`Process ${cur.id} is preempted by a process in a higher-priority queue.`);cur=null;nx=null;brk=true}
+   if(!nx)nx=(Q.find(x=>x.length)||[]).shift()||null;
+  }else{
+   const ready=P.filter(p=>p.at<=t&&p.rem>0).sort(CMP[algo]);
+   if(algo==='SRTF'){nx=ready[0]||null;if(cur&&nx&&cur.rem<=nx.rem)nx=cur}
+   else if(!cur)nx=ready[0]||null;
+  }
+  if(nx!==cur){
+   if(algo==='SRTF'&&cur&&cur.rem>0&&nx)L(t,`Process ${cur.id} is preempted by ${nx.id} (shorter remaining time).`);
+   if(nx){L(t,`CPU selects ${nx.id} using ${NM[algo]}.`);L(t,`Process ${nx.id} ${nx.st?'resumes':'starts'} execution.`);nx.st=true;used=0}
+  }
+  cur=nx;
+  if(!cur){if(!idle)L(t,`CPU is idle at time ${t} (no process is ready).`);idle=true}else idle=false;
+  const id=cur?cur.id:null,last=seg[seg.length-1];
+  if(last&&last.p===id&&last.e===t&&!brk)last.e++;else seg.push({p:id,s:t,e:t+1});
+  brk=false;
+  if(cur){cur.rem--;used++;if(cur.rem===0){cur.ct=t+1;done++;L(t+1,`Process ${cur.id} completes at time ${t+1}.`);cur=null;used=0}}
+  t++;
+ }
+ P.forEach(p=>{p.tat=p.ct-p.at;p.wt=p.tat-p.bt});
+ const busy=P.reduce((a,p)=>a+p.bt,0),n=P.length;
+ return{P,seg,log,end:t,avgW:P.reduce((a,p)=>a+p.wt,0)/n,avgT:P.reduce((a,p)=>a+p.tat,0)/n,util:busy/t*100};
+}
+/*END*/
+const $=s=>document.querySelector(s),SAMPLE=[['P1',0,5,2],['P2',1,3,1],['P3',2,8,4],['P4',3,6,3],['P5',24,2,1]].map(([id,at,bt,pr])=>({id,at,bt,pr}));
+const RULES={FCFS:'FCFS: the process that arrived first runs first and keeps the CPU until it finishes (non-preemptive).',SJF:'SJF: when the CPU is free, pick the arrived process with the smallest burst time and run it to completion (non-preemptive).',SRTF:'SRTF: at every time unit, run the arrived process with the least remaining time. A newly arrived shorter job preempts the running one.',PRIORITY:'Priority: when the CPU is free, pick the arrived process with the highest priority (smallest priority number) and run it to completion.',RR:'Round Robin: processes take turns in arrival order, each for at most one time quantum; unfinished processes go to the back of the queue.',MLFQ:'MLFQ: three queues. New processes enter queue 1 (time slice 2). A process that uses its full slice moves down: queue 2 has slice 4, queue 3 is FCFS. The CPU always serves the highest non-empty queue, and a process in a higher queue preempts a lower one.'};
+let procs=[],res=null,T=0,timer=null,sel=null;
+const msg=(t,c)=>{const m=$('#msg');m.textContent=t;m.className=c||'err'};
+const col=id=>`hsl(${(procs.findIndex(p=>p.id===id)*47+260)%360},55%,42%)`;
+function nextId(){let k=1;while(procs.some(p=>p.id==='P'+k))k++;$('#fi').value='P'+k}
+function rTab(){$('#ptab tbody').innerHTML=procs.map(p=>`<tr data-id="${p.id}" class="${sel===p.id?'sel':''}"><td>${p.id}</td><td>${p.at}</td><td>${p.bt}</td><td>${p.pr}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">No processes yet. Add one or load sample data.</td></tr>'}
+$('#ptab').onclick=e=>{const r=e.target.closest('tr[data-id]');if(!r)return;const p=procs.find(x=>x.id===r.dataset.id);sel=p.id;$('#fi').value=p.id;$('#fa').value=p.at;$('#fb').value=p.bt;$('#fp').value=p.pr;rTab()};
+$('#add').onclick=()=>{
+ const id=$('#fi').value.trim().toUpperCase(),at=$('#fa').value.trim(),bt=$('#fb').value.trim(),pr=$('#fp').value.trim()||'1',ok=(v,lo,hi)=>/^\d+$/.test(v)&&+v>=lo&&+v<=hi;
+ if(!/^[A-Z][A-Z0-9_]{0,7}$/.test(id))return msg('Process ID must start with a letter and use letters, digits or _ (up to 8 characters), for example P1.');
+ if(procs.some(p=>p.id===id))return msg(`Process ID ${id} already exists. Use a different ID.`);
+ if(!ok(at,0,999))return msg('Arrival time must be a whole number from 0 to 999 (no negatives or decimals).');
+ if(!ok(bt,1,99))return msg('Burst time must be a whole number from 1 to 99.');
+ if(!ok(pr,0,99))return msg('Priority must be a whole number from 0 to 99 (smaller number = higher priority).');
+ if(procs.length>=15)return msg('You can add at most 15 processes.');
+ procs.push({id,at:+at,bt:+bt,pr:+pr});sel=null;msg(`Added ${id}.`,'ok');nextId();refresh();
+};
+$('#del').onclick=()=>{const id=$('#fi').value.trim().toUpperCase(),k=procs.findIndex(p=>p.id===id);
+ if(k<0)return msg(`No process with ID ${id||'(empty)'} to delete. Click a row or type an existing ID.`);
+ procs.splice(k,1);sel=null;msg(`Deleted ${id}.`,'ok');nextId();refresh()};
+$('#clr').onclick=()=>{procs=[];sel=null;msg('All processes cleared.','ok');nextId();refresh()};
+$('#smp').onclick=()=>{procs=SAMPLE.map(p=>({...p}));sel=null;msg('Sample data loaded.','ok');nextId();refresh()};
+function refresh(){rTab();run()}
+function run(){
+ pause();T=0;const a=$('#algo').value,q=+$('#q').value;$('#qbox').hidden=a!=='RR';$('#rule').textContent=RULES[a];
+ if(a==='RR'&&!(/^\d+$/.test($('#q').value)&&q>=1&&q<=99)){res=null;msg('Time quantum must be a whole number from 1 to 99.')}
+ else res=procs.length?sim(procs,a,q):null;
+ $('#sN').textContent=procs.length;$('#sW').textContent=res?res.avgW.toFixed(2):'-';$('#sT').textContent=res?res.avgT.toFixed(2):'-';$('#sC').textContent=res?res.util.toFixed(1)+'%':'-';
+ $('#rtab tbody').innerHTML=res?res.P.map(p=>`<tr data-p="${p.id}"><td>${p.id}</td><td>${p.at}</td><td>${p.bt}</td><td>${p.ct}</td><td>${p.tat}</td><td>${p.wt}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">Add processes to see results.</td></tr>';
+ $('#avg').textContent=res?`Average waiting time = ${res.avgW.toFixed(2)}; average turnaround time = ${res.avgT.toFixed(2)}; CPU utilization = ${res.util.toFixed(2)}%`:'';
+ const c=$('#chart');
+ if(!res){c.innerHTML='<p class="empty">Add processes to see the chart.</p>';$('#clock').textContent='';$('#log').innerHTML='';return}
+ const U=Math.max(16,Math.min(48,Math.floor(880/res.end)));
+ c.innerHTML='<div class="bars">'+res.seg.map((g,k)=>`<div class="blk${g.p?'':' idle'}" style="width:${(g.e-g.s)*U}px;${g.p?'background:'+col(g.p):''}"><span>${g.p||'Idle'}</span><i>${g.s}</i>${k===res.seg.length-1?`<u>${g.e}</u>`:''}</div>`).join('')+'</div>';
+ paint();
+}
+function paint(){
+ if(!res)return;
+ document.querySelectorAll('.blk').forEach((b,k)=>{const g=res.seg[k];b.classList.toggle('done',T>=g.e);b.classList.toggle('act',T>=g.s&&T<g.e);b.classList.toggle('fut',T<g.s)});
+ const cur=res.seg.find(g=>T>=g.s&&T<g.e);
+ document.querySelectorAll('#rtab tr[data-p]').forEach(r=>{const p=res.P.find(x=>x.id===r.dataset.p);r.classList.toggle('run',!!cur&&cur.p===p.id);r.classList.toggle('arr',p.at===T);r.classList.toggle('just',p.ct===T);r.classList.toggle('pend',T<p.ct)});
+ $('#clock').textContent=`Time ${T} of ${res.end}: `+(T>=res.end?'all processes finished':cur.p?`${cur.p} is running`:'CPU is idle');
+ const lg=$('#log');lg.innerHTML=res.log.filter(l=>l.t<=T).map((l,k)=>`<div class="${l.t===T?'now':''}"><span>t=${l.t}</span>Step ${k+1}: ${l.m}</div>`).join('');lg.scrollTop=lg.scrollHeight;
+}
+function pause(){clearInterval(timer);timer=null}
+$('#play').onclick=()=>{if(!res)return msg('Add at least one process first.');if(T>=res.end)T=0;paint();pause();timer=setInterval(()=>{T++;paint();if(T>=res.end)pause()},700)};
+$('#pause').onclick=pause;
+$('#step').onclick=()=>{pause();if(res&&T<res.end){T++;paint()}};
+$('#reset').onclick=()=>{pause();T=0;paint()};
+$('#run').onclick=run;$('#algo').onchange=run;$('#q').onchange=run;
+$('#nav').innerHTML=[['dash','▦','Dashboard'],['proc','☰','Process Management'],['sim','⚙','Algorithm Simulator'],['gantt','▬','Gantt Chart'],['res','✓','Results'],['lab','✎','Lab Manual'],['kern','⬡','Kernel Architectures'],['viva','?','Viva Questions']].map(([i,c,l])=>`<a href="#${i}"><span>${c}</span>${l}</a>`).join('');
+$('#nav').onclick=e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();$(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});document.querySelectorAll('#nav a').forEach(x=>x.classList.toggle('on',x===a))};
+
+/* ---------- Lab manual content ---------- */
+const NP=(key,title)=>String.raw`/* ${title} (non-preemptive) - input: n, then AT BT Priority per process */
+#include <stdio.h>
+int main(){
+  int n,i,t=0,done=0,at[20],bt[20],pr[20],ct[20],fin[20]={0};
+  float sw=0,st=0;
+  scanf("%d",&n);
+  for(i=0;i<n;i++) scanf("%d %d %d",&at[i],&bt[i],&pr[i]);
+  while(done<n){
+    int s=-1;
+    for(i=0;i<n;i++)             /* best arrived, unfinished process */
+      if(!fin[i]&&at[i]<=t&&(s<0||${key}[i]<${key}[s]||(${key}[i]==${key}[s]&&at[i]<at[s]))) s=i;
+    if(s<0){ t++; continue; }    /* nobody ready: CPU idle */
+    t+=bt[s]; ct[s]=t; fin[s]=1; done++;   /* run to completion */
+  }
+  printf("P  AT BT CT TAT WT\n");
+  for(i=0;i<n;i++){
+    int tat=ct[i]-at[i], wt=tat-bt[i];     /* TAT = CT-AT, WT = TAT-BT */
+    st+=tat; sw+=wt;
+    printf("P%d %2d %2d %2d %3d %2d\n",i+1,at[i],bt[i],ct[i],tat,wt);
+  }
+  printf("Avg TAT=%.2f  Avg WT=%.2f\n",st/n,sw/n);
+  return 0;
+}`;
+const C_SRTF=String.raw`/* SRTF (preemptive): re-decide after every time unit */
+#include <stdio.h>
+int main(){
+  int n,i,t=0,done=0,at[20],bt[20],rem[20],ct[20];
+  float sw=0,st=0;
+  scanf("%d",&n);
+  for(i=0;i<n;i++){ scanf("%d %d",&at[i],&bt[i]); rem[i]=bt[i]; }
+  while(done<n){
+    int s=-1;
+    for(i=0;i<n;i++)             /* smallest remaining time among arrived */
+      if(rem[i]>0&&at[i]<=t&&(s<0||rem[i]<rem[s]||(rem[i]==rem[s]&&at[i]<at[s]))) s=i;
+    if(s<0){ t++; continue; }    /* CPU idle */
+    rem[s]--; t++;               /* run 1 unit; a shorter job may preempt next loop */
+    if(rem[s]==0){ ct[s]=t; done++; }
+  }
+  printf("P  AT BT CT TAT WT\n");
+  for(i=0;i<n;i++){
+    int tat=ct[i]-at[i], wt=tat-bt[i];
+    st+=tat; sw+=wt;
+    printf("P%d %2d %2d %2d %3d %2d\n",i+1,at[i],bt[i],ct[i],tat,wt);
+  }
+  printf("Avg TAT=%.2f  Avg WT=%.2f\n",st/n,sw/n);
+  return 0;
+}`;
+const C_RR=String.raw`/* Round Robin: input n, quantum q, then AT BT per process */
+#include <stdio.h>
+int main(){
+  int n,q,i,t=0,done=0,f=0,r=0,at[20],bt[20],rem[20],ct[20],qu[2000],in[20]={0};
+  float sw=0,st=0;
+  scanf("%d %d",&n,&q);
+  for(i=0;i<n;i++){ scanf("%d %d",&at[i],&bt[i]); rem[i]=bt[i]; }
+  while(done<n){
+    for(i=0;i<n;i++) if(!in[i]&&at[i]<=t){ qu[r++]=i; in[i]=1; }  /* admit arrivals */
+    if(f==r){ t++; continue; }                                    /* queue empty: idle */
+    int s=qu[f++], run=rem[s]<q?rem[s]:q;                         /* one time slice */
+    t+=run; rem[s]-=run;
+    for(i=0;i<n;i++) if(!in[i]&&at[i]<=t){ qu[r++]=i; in[i]=1; }  /* arrivals during slice go first */
+    if(rem[s]>0) qu[r++]=s; else { ct[s]=t; done++; }             /* requeue or finish */
+  }
+  printf("P  AT BT CT TAT WT\n");
+  for(i=0;i<n;i++){
+    int tat=ct[i]-at[i], wt=tat-bt[i];
+    st+=tat; sw+=wt;
+    printf("P%d %2d %2d %2d %3d %2d\n",i+1,at[i],bt[i],ct[i],tat,wt);
+  }
+  printf("Avg TAT=%.2f  Avg WT=%.2f\n",st/n,sw/n);
+  return 0;
+}`;
+const C_MLFQ=String.raw`/* MLFQ: 3 queues, slices 2 and 4, last queue FCFS. Input: n, then AT BT */
+#include <stdio.h>
+int main(){
+  int n,i,j,t=0,done=0,at[20],bt[20],rem[20],ct[20],lv[20]={0},in[20]={0};
+  int Q[3][2000],h[3]={0},e[3]={0},qt[3]={2,4,1000000},cur=-1,used=0;
+  float sw=0,st=0;
+  scanf("%d",&n);
+  for(i=0;i<n;i++){ scanf("%d %d",&at[i],&bt[i]); rem[i]=bt[i]; }
+  while(done<n){
+    for(i=0;i<n;i++) if(!in[i]&&at[i]==t){ Q[0][e[0]++]=i; in[i]=1; }  /* arrivals join top queue */
+    if(cur>=0&&used>=qt[lv[cur]]){                                    /* slice used up: demote */
+      if(lv[cur]<2) lv[cur]++;
+      Q[lv[cur]][e[lv[cur]]++]=cur; cur=-1;
+    } else if(cur>=0)                                                 /* higher queue waiting: preempt */
+      for(j=0;j<lv[cur];j++) if(h[j]<e[j]){ Q[lv[cur]][e[lv[cur]]++]=cur; cur=-1; break; }
+    if(cur<0) for(j=0;j<3;j++) if(h[j]<e[j]){ cur=Q[j][h[j]++]; used=0; break; }
+    if(cur<0){ t++; continue; }                                       /* CPU idle */
+    rem[cur]--; used++; t++;
+    if(rem[cur]==0){ ct[cur]=t; done++; cur=-1; }
+  }
+  printf("P  AT BT CT TAT WT\n");
+  for(i=0;i<n;i++){
+    int tat=ct[i]-at[i], wt=tat-bt[i];
+    st+=tat; sw+=wt;
+    printf("P%d %2d %2d %2d %3d %2d\n",i+1,at[i],bt[i],ct[i],tat,wt);
+  }
+  printf("Avg TAT=%.2f  Avg WT=%.2f\n",st/n,sw/n);
+  return 0;
+}`;
+const SEL=`R = arrived processes that are not finished
+if R is empty: t = t + 1 (CPU idle); continue`;
+const ALG=[
+['FCFS - First Come First Serve','Processes are served in order of arrival. The CPU is given to the earliest arrived process, which runs until it finishes. Simple and fair, but short jobs can wait behind a long one (convoy effect).',`sort processes by arrival time
+t = 0
+for each process p in order:
+    if t < p.AT: t = p.AT            // CPU idle
+    t = t + p.BT; p.CT = t
+TAT = CT - AT;  WT = TAT - BT`,NP('at','FCFS')],
+['SJF - Shortest Job First (non-preemptive)','When the CPU becomes free, the arrived process with the smallest burst time is chosen and runs to completion. It gives the lowest average waiting time for non-preemptive scheduling but can starve long jobs.',`t = 0; done = 0
+while done < n:
+    ${SEL.replace(/\n/g,'\n    ')}
+    p = process in R with smallest BT (tie: smaller AT)
+    t = t + p.BT; p.CT = t; done++`,NP('bt','SJF')],
+['SRTF - Shortest Remaining Time First (preemptive)','The preemptive version of SJF. At every time unit the process with the least remaining time runs, so a newly arrived shorter job preempts the running one.',`t = 0; done = 0
+while done < n:
+    ${SEL.replace(/\n/g,'\n    ')}
+    p = process in R with smallest remaining time
+    run p for 1 unit: p.rem--, t++
+    if p.rem == 0: p.CT = t; done++`,C_SRTF],
+['Priority Scheduling (non-preemptive)','Each process has a priority. In this simulator a smaller number means a higher priority. When the CPU is free, the highest priority arrived process runs to completion. Low-priority processes may starve; aging fixes this.',`t = 0; done = 0
+while done < n:
+    ${SEL.replace(/\n/g,'\n    ')}
+    p = process in R with smallest priority number (tie: smaller AT)
+    t = t + p.BT; p.CT = t; done++`,NP('pr','Priority (smaller number = higher priority)')],
+['Round Robin (time quantum q)','Each process gets the CPU for at most q time units, then goes to the back of the ready queue if unfinished. It is preemptive, fair, and gives good response time. A very large q behaves like FCFS; a very small q wastes time on context switches.',`queue = empty; t = 0; admit arrivals with AT <= t
+while processes remain:
+    if queue is empty: t = t + 1; admit arrivals; continue
+    p = dequeue(); run = min(q, p.rem)
+    t = t + run; p.rem = p.rem - run
+    admit processes that arrived by t      // before requeueing p
+    if p.rem > 0: enqueue(p) else p.CT = t`,C_RR],
+['MLFQ - Multi-Level Feedback Queue','Three queues with different priorities. New processes enter the top queue (slice 2). A process that uses its whole slice is demoted (queue 2 has slice 4, queue 3 is FCFS), so short jobs finish fast and long jobs sink. The CPU always serves the highest non-empty queue and preempts lower ones.',`queues Q1(slice 2), Q2(slice 4), Q3(FCFS); t = 0
+every time unit:
+    new arrivals join the end of Q1
+    if running p used its full slice: move p to the next lower queue
+    else if a higher queue than p's queue is non-empty: p goes to the back of its own queue
+    if CPU free: take the first process of the highest non-empty queue
+    if none: CPU idle; t++; continue
+    run for 1 unit; p.rem--; t++
+    if p.rem == 0: p.CT = t`,C_MLFQ]];
+const FAQ=[['CPU scheduling','The OS activity of choosing which ready process gets the CPU next, so the CPU stays busy and processes finish quickly and fairly.'],['Arrival Time (AT)','The time at which a process enters the ready queue.'],['Burst Time (BT)','The total CPU time a process needs to finish.'],['Completion Time (CT)','The time at which a process finishes execution.'],['Turnaround Time (TAT)','Total time from arrival to completion: TAT = CT - AT.'],['Waiting Time (WT)','Time spent waiting in the ready queue: WT = TAT - BT.'],['Context Switching','Saving the state (PCB) of the running process and loading the state of the next one. It is pure overhead.'],['Preemptive scheduling','The OS can take the CPU away from a running process (SRTF, Round Robin).'],['Non-preemptive scheduling','A process keeps the CPU until it finishes or blocks (FCFS, SJF, Priority here).']];
+const VIVA=[['What is CPU scheduling?','Choosing which ready process runs on the CPU next.'],['What does the dispatcher do?','It hands the CPU to the chosen process: context switch, switch to user mode, jump to the right instruction.'],['Preemptive vs non-preemptive?','Preemptive can take the CPU from a running process; non-preemptive waits until it finishes or blocks.'],['Formula for turnaround time?','TAT = Completion Time - Arrival Time.'],['Formula for waiting time?','WT = Turnaround Time - Burst Time.'],['What is the convoy effect?','Short processes stuck behind one long process, as in FCFS.'],['Why is SJF considered optimal?','It gives the minimum average waiting time for a known set of bursts.'],['What is the main problem with SJF?','Starvation of long jobs, and the next burst length is not known in advance (it is estimated).'],['What is starvation and how is it solved?','A process waits indefinitely. Aging, gradually raising its priority, prevents it.'],['Difference between SJF and SRTF?','SJF is non-preemptive; SRTF is its preemptive form using remaining time.'],['Which algorithms here are preemptive?','SRTF and Round Robin. The Priority version here is non-preemptive.'],['Effect of time quantum in Round Robin?','Too large behaves like FCFS; too small causes many context switches.'],['What is context switching?','Saving one process state in its PCB and restoring another.'],['What is CPU utilization?','Percentage of time the CPU is busy: busy time / total time x 100.'],['Define throughput.','Number of processes completed per unit time.'],['Define response time.','Time from arrival until the first time the process gets the CPU.'],['What is the ready queue?','The set of processes in memory that are ready to run and waiting for the CPU.']];
+function el(tag,txt,par,cls){const e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(cls)e.className=cls;par.appendChild(e);return e}
+function qa(arr,par){arr.forEach(([q,a])=>{const d=el('details',null,par);el('summary',q,d);el('p',a,d)})}
+(function(){
+ const L=$('#labbody');
+ el('h3','AIM',L);el('p','Implement and visualize CPU scheduling algorithms and calculate completion time, turnaround time, and waiting time.',L);
+ el('h3','ALGORITHM, PSEUDOCODE and C PROGRAM',L);
+ ALG.forEach(a=>{const d=el('details',null,L);el('summary',a[0],d);el('p',a[1],d);el('h3','Pseudocode',d);el('pre',a[2],d);el('h3','C program (compile: gcc prog.c -o prog)',d);el('pre',a[3],d)});
+ el('h3','SAMPLE INPUT',L);
+ el('pre','Process  AT  BT  Priority\n'+SAMPLE.map(p=>`${p.id.padEnd(8)} ${String(p.at).padEnd(3)} ${String(p.bt).padEnd(3)} ${p.pr}`).join('\n')+'\n(Round Robin uses quantum = 3)',L);
+ el('h3','SAMPLE OUTPUT (generated by this simulator\'s own code)',L);
+ [['FCFS',0],['RR',3]].forEach(([a,q])=>{const r=sim(SAMPLE,a,q);
+  el('pre',`${NM[a]}${a==='RR'?' (q=3)':''}\nGantt: `+r.seg.map(g=>`|${g.p||'Idle'} ${g.s}-${g.e}`).join(' ')+'|\n\nProcess  CT  TAT  WT\n'+r.P.map(p=>`${p.id.padEnd(8)} ${String(p.ct).padEnd(3)} ${String(p.tat).padEnd(4)} ${p.wt}`).join('\n')+`\nAverage TAT = ${r.avgT.toFixed(2)}, Average WT = ${r.avgW.toFixed(2)}, CPU utilization = ${r.util.toFixed(2)}%`,L)});
+ el('h3','VIVA QUESTIONS',L);el('p','See the Viva Questions section below (17 questions with short answers).',L);
+ el('h3','FAQ',L);qa(FAQ,L);
+ qa(VIVA,$('#vbody'));
+ const K=[['Monolithic Kernel','The whole operating system runs as one large program in kernel space, with all services calling each other directly.',['All services (scheduler, memory, file systems, drivers) in one address space','Fast, because services call each other directly','Drivers can be loaded as modules (Linux)'],'Advantages: high performance, simple internal calls.','Disadvantages: a bug in any driver can crash the system; large and hard to maintain.','Examples: Linux, traditional UNIX.',[['u','User applications (user space)'],['k','System call interface'],['k','Scheduler','Memory manager','File system','Device drivers','Networking'],['h','Hardware']]],
+ ['Microkernel','Only the smallest set of services runs in kernel space; everything else runs as separate user-space servers that talk through message passing.',['Kernel handles IPC, basic scheduling and address spaces','File systems, drivers and networking run as user-space servers','Servers communicate by messages'],'Advantages: more reliable and secure (a failed driver does not crash the kernel); easy to extend.','Disadvantages: message passing adds overhead, so it can be slower.','Examples: MINIX 3, QNX.',[['u','Applications','File server','Device drivers','Network server'],['k','Microkernel: IPC, basic scheduling, memory address spaces'],['h','Hardware']]],
+ ['Layered Kernel','The operating system is split into layers; each layer uses only the services of the layers below it.',['Layer 0 is hardware-facing, the top layer is the user interface','Each layer hides its details from the layers above','Easy to build and debug layer by layer'],'Advantages: modular, easy to test and verify.','Disadvantages: hard to define layers cleanly; calls pass through many layers, which is slower.','Example: the THE operating system by Dijkstra.',[['u','Layer 5: Operator'],['u','Layer 4: User programs'],['k','Layer 3: I/O buffering'],['k','Layer 2: Operator-process communication'],['k','Layer 1: Memory and drum management'],['k','Layer 0: Processor allocation and multiprogramming'],['h','Hardware']]]];
+ K.forEach(k=>{const d=el('div',null,$('#kc'));el('h3',k[0],d);el('p',k[1],d);el('p','Important features:',d);const u=el('ul',null,d);k[2].forEach(f=>el('li',f,u));el('p',k[3],d);el('p',k[4],d);el('p',k[5],d);
+  const g=el('div',null,d,'dg');k[6].forEach(r=>{const w=el('div',null,g,'dr');r.slice(1).forEach(t=>el('div',t,w,r[0]))})});
+ nextId();refresh();
+})();
+</script></body></html>
